@@ -14,11 +14,67 @@ info:
     url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
 host: api.readlight.me
 tags:
-  - name: "USER"
+  - name: account
     description: "User Authentification API"
 basePath: /
 schemes:
   - https
 paths:
-  
+  /auth/signup:
+    post:
+      tags:
+        - account
+      summary: Generate User Account
+      description: api node for generating user account
+      operationId: createUser
+      produces:
+        - application/json
+        - application/xml
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: name
+          in: formData
+          description: name of user account
+          required: true
+          type: string
+        - name: email
+          in: formData
+          description: email of user account
+          required: true
+          type: string
+        - name: password
+          in: formData
+          description: password of user account
+          required: true
+          type: string
+        - name: phone
+          in: formData
+          description: telnumber of user account (only number)
+          required: true
+          type: string
+      responses:
+        default:
+            description: default reponse model
+            schema:
+              $ref: "#/definitions/apiResult"
+        '200':
+          description: account generated and verification email sent.
+        '409':
+          description: email client provided duplicated.
+        '412':
+          description: data client provided doesn't satisfy format.
+        '424':
+          description: >-
+            account generated but verification email wasn't sent.<br> please
+            resend verification email in application.
+        '500':
+          description: unknown server error occured (cause of network status)
 definitions:
+  apiResult:
+    type: object
+    properties:
+      result: 
+        type: string
+      error:
+        type: string

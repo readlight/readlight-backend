@@ -25,7 +25,8 @@ router.get("/", function (req, res) {
     res.writeHead(200, { "Content-Type": "text/html" });
     res.write("<title>ReadLight RestFul API Server</title>");
     res.write("<link rel=\"icon\" href=\"https://api.readlight.me/common/icon.png\">");
-    res.end("Welcome!<br>This is API Server of ReadLight");
+    res.write("Welcome!<br>This is API Server of ReadLight<br><br>");
+    res.end("API Document is <a href=\"https://api.readlight.me/docs\">HERE</a>");
 });
 
 export default router;
