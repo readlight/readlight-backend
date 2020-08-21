@@ -1,0 +1,24 @@
+swagger: '2.0'
+info:
+  description: >-
+    This is api docs for readlight.<br> If you
+    want to know our service more, please visit <a
+    href="https://readlight.me">HERE</a>.
+  version: 1.0.0
+  title: ReadLight-Backend
+  termsOfService: 'https://readlight.me/terms/'
+  contact:
+    email: help@readlight.me
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+host: api.readlight.me
+tags:
+  - name: "USER"
+    description: "User Authentification API"
+basePath: /
+schemes:
+  - https
+paths:
+  
+definitions:
