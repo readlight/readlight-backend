@@ -41,7 +41,7 @@ try {
             if (err) throw err;
             console.log("[DB] Database connected via TCP/IP on port 27017 with TLS encryption");
         });
-    }
+    };
 
     db_connect();
     connection.on("disconnected",() => {
