@@ -59,7 +59,7 @@ router.post ("/", async (req,res) => {
         
         createLog.save(async (err) => {
             //# HANDLE WHEN SAVE TASK FAILED
-            if (err) console.log(err);
+            if (err) console.error(err);
         });
     };
 
@@ -87,7 +87,6 @@ router.post ("/", async (req,res) => {
      */
     _user.password = undefined;
     _user.salt = undefined;
-    _user.__v = undefined;
     const jwtresult = jwtSign(_user);
     if (!jwtresult) {
       _response.result = "ERR_JWT_GENERATE_FAILED";
