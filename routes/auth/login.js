@@ -42,6 +42,10 @@ router.post ("/", async (req,res) => {
         _response.result = "ERR_USER_NOT_FOUND";
         res.status(409).json(_response);
         return;
+    } else if (_user.enable === "rejected") {
+        _response.result = "ERR_USER_ACCESS_DENIED";
+        res.status(423).json(_response);
+        return;
     }
 
     /**

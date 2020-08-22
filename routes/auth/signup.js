@@ -77,8 +77,8 @@ router.post ("/", async (req,res) => {
      * CHECK WHETHER EMAIL IS USED
      */
     
-    const user = await User.findOne({"email" : email});
-    if (user) {
+    const _user = await User.findOne({"email" : email});
+    if (_user) {
         _response.result = "ERR_EMAIL_DUPLICATION";
         res.status(409).json(_response);
         return;
@@ -182,7 +182,7 @@ router.post ("/", async (req,res) => {
         catch (err) {
             console.error(err); //SHOW ERROR FOR PM2 INSTANCE
             _response.result = "ERR_VERIFY_EMAIL_SEND_FAILED";
-            _response.error = err;
+            _response.error = err.toString();
             res.status(424).json(_response);
             SAVE_LOG(_response);
         }

@@ -71,7 +71,7 @@ paths:
           description: account generated and verification email sent.
         '403':
           description: >-
-            Request denied cause of unAuthorized.<br>
+            Request denied because you are not authorized.<br>
             Please apply authorization header.
         '409':
           description: email client provided duplicated.
@@ -153,6 +153,8 @@ paths:
           description: account client provided not exist.
         '412':
           description: data client provided doesn't satisfy format.
+        '423':
+          description: user login denied because account closed.
         '500':
           description: unknown server error occured (cause of network status)
   /auth/jwtdecode:
@@ -184,6 +186,41 @@ paths:
             $ref: "#/definitions/UserInfo"
         '500':
           description: jwt token decode failed.
+  /auth/pwdreset/{email}:
+    put:
+      tags:
+        - account
+      summary: Non Social User Password Reset Email Send 
+      description: api node for reset password
+      operationId: resetpwd-send
+      produces:
+        - application/json
+        - application/xml
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: email
+          in: path
+          description: user account email
+          required: true
+          type: string
+      responses:
+        default:
+            description: default reponse model
+            schema:
+              $ref: "#/definitions/apiResult"
+        '403':
+          description: >-
+            Request denied because you are not authorized.<br>
+            Please apply authorization header.
+        '409':
+          description: user account email client provided is not valid.
+        '423':
+          description: user login denied because account closed.
+        '424':
+          description: password reset email sending failed.
+        '500':
+          description: api server connection is unstable (cause of network status)
   /auth/social-kakao:
     put:
       tags:
@@ -215,7 +252,7 @@ paths:
             $ref: "#/definitions/apiLoginResult"
         '403':
           description: >-
-            Request denied cause of unAuthorized.<br>
+            Request denied because you are not authorized.<br><br>
             Please apply authorization header.
         '409':
           description: >-
@@ -223,6 +260,8 @@ paths:
             please login through basic login -> "/auth/login"
         '412':
           description: kakaoToken user provided is not acceptable.
+        '423':
+          description: user login denied because account closed.
         '424':
           description: >-
             account generated but jwtToken generate failed.<br>
