@@ -44,7 +44,7 @@ router.put ("/", async (req,res) => {
      * REQUEST USER ACCOUNT INFORMATION TO KAKAO API
      */
     const requestKakao = async () => {
-        return new Promise(result => {
+        return new Promise( (result) => {
             request({
                 uri: "https://kapi.kakao.com/v2/user/me",
                 headers: {"Authorization": `Bearer ${kakaotoken}`}}, (error, response, body) => {
