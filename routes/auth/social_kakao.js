@@ -109,8 +109,14 @@ router.put ("/", async (req,res) => {
     };
 
     if (_user) {
+        if (_user.enable === "rejected") {
+            _response.result = "ERR_USER_ACCESS_DENIED";
+            res.status(423).json(_response);
+            return;
+        }
+        
         //# CHECK IF KAKAO ACCOUNT CI IS VALID
-        if (userObject.password !== _user.password) {
+        if (!(_user.enable === "kakao" && userObject.password === _user.password)) {
             _response.result = "ERR_KAKAO_USER_MISMATCH";
             SAVE_LOG("KAKAO_LOGIN",_response);
             res.status(409).json(_response);
@@ -155,7 +161,7 @@ router.put ("/", async (req,res) => {
         phone: `${userObject.phone}`,
         salt: `${salt.toString("base64")}`,
         lastlogin : moment().format("YYYY-MM-DD HH:mm:ss"),
-        enable: true
+        enable: "kakao"
     });
 
     await createUser.save(async (err) => {

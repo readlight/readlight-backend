@@ -8,8 +8,8 @@ const User = new Schema({
   lastlogin: String,
   salt: String,
   enable: {
-    type: Boolean,
-    default: false
+    type: String,
+    default: "unknown"
   }
 }, {
   versionKey: false

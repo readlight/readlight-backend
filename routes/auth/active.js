@@ -33,7 +33,7 @@ router.get ("/", async (req,res) => {
     /**
      * FIND USER ON DATABASE USING EMAIL
      */
-    const user = await User.findOne({"email" : email, "enable" : false});
+    const user = await User.findOne({"email" : email, "enable" : "unknown"});
     if (!user) {
         _response.result = "ERR_USER_NOT_FOUND";
         res.status(409).json(_response);
@@ -76,8 +76,8 @@ router.get ("/", async (req,res) => {
     /**
      * CHANGE USER ENABLE STATE
      */
-    const verify = await User.updateOne( {"email" : email , "enable" : false }, {"enable" :  true} );
-    if (!verify) {
+    const _verify = await User.updateOne( {"email" : email , "enable" : "unknown" }, {"enable" : "verified" } );
+    if (!_verify) {
         _response.result = "ERR_USER_UPDATE_FAILED";
         res.status(500).json(_response);
         SAVE_LOG(_response);
