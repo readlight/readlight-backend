@@ -19,6 +19,13 @@ tags:
 basePath: /
 schemes:
   - https
+securityDefinitions:
+  JWTAuth:
+    type: apiKey
+    name: authorization
+    in: header
+  BasicAuth:
+    type: basic
 paths:
   /auth/signup:
     post:
@@ -32,6 +39,8 @@ paths:
         - application/xml
       consumes:
         - application/x-www-form-urlencoded
+      security:
+        - BasicAuth: []
       parameters:
         - name: name
           in: formData
@@ -60,6 +69,10 @@ paths:
               $ref: "#/definitions/apiResult"
         '200':
           description: account generated and verification email sent.
+        '403':
+          description: >-
+            Request denied cause of unAuthorized.<br>
+            Please apply authorization header.
         '409':
           description: email client provided duplicated.
         '412':
@@ -133,11 +146,11 @@ paths:
             schema:
               $ref: "#/definitions/apiResult"
         '200':
-          description: user login succeed and json token published
+          description: user login succeed and json token published.
           schema:
             $ref: "#/definitions/apiLoginResult"
         '409':
-          description: account client provided not exist
+          description: account client provided not exist.
         '412':
           description: data client provided doesn't satisfy format.
         '500':
@@ -152,6 +165,8 @@ paths:
       produces:
         - application/json
         - application/xml
+      consumes:
+        - application/x-www-form-urlencoded
       parameters:
         - name: token
           in: query
@@ -164,11 +179,56 @@ paths:
             schema:
               $ref: "#/definitions/apiResult"
         '200':
-          description: jwt token decoded
+          description: jwt token decoded.
           schema:
             $ref: "#/definitions/UserInfo"
         '500':
-          description: jwt token decode failed
+          description: jwt token decode failed.
+  /auth/social-kakao:
+    put:
+      tags:
+        - account
+      summary: Social Account Access - Kakao
+      description: api node for social access - kakao
+      operationId: socialkakao
+      produces:
+        - application/json
+        - application/xml
+      consumes:
+        - application/x-www-form-urlencoded
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: kakaotoken
+          in: formData
+          description: The Kakao token for process.
+          required: true
+          type: string
+      responses:
+        default:
+            description: default reponse model
+            schema:
+              $ref: "#/definitions/apiResult"
+        '200':
+          description: kakao user login succeed and json token published.
+          schema:
+            $ref: "#/definitions/apiLoginResult"
+        '403':
+          description: >-
+            Request denied cause of unAuthorized.<br>
+            Please apply authorization header.
+        '409':
+          description: >-
+            user acounnt can not be logined through kakaoToken.<br>
+            please login through basic login -> "/auth/login"
+        '412':
+          description: kakaoToken user provided is not acceptable.
+        '424':
+          description: >-
+            account generated but jwtToken generate failed.<br>
+            please request again to this node to get jwtToken.
+        '500':
+          description: api server connection is unstable (cause of network status) 
 definitions:
   apiResult:
     type: object

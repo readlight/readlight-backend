@@ -45,6 +45,15 @@ router.post ("/", async (req,res) => {
     }
 
     /**
+     * CHECK AUTHORIZATION HEADER USING BASIC AUTH
+     */
+    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) {
+        _response.result = "ERR_NOT_AUTHORIZED_IDENTITY";
+        res.status(403).json(_response);
+        return;
+    }
+
+    /**
      * CHECK WHETHER PROVIDED POST DATA IS VALID
      */
     const { email,password,name,phone } = req.body;
@@ -101,7 +110,7 @@ router.post ("/", async (req,res) => {
         password: `${encryptPassword.toString("base64")}`,
         name,
         phone: `${iv.toString("hex") + ":" + encryptPhone.toString("hex")}`,
-        salt: `${salt.toString("base64")}`,
+        salt: `${salt.toString("base64")}`
     });
 
     /**
@@ -114,7 +123,7 @@ router.post ("/", async (req,res) => {
             originip : getClientIp(req),
             category : "SIGNUP",
             details : createUser,
-            result : _response,
+            result : _response
         });
         createLog.save((err) => {
             if (err) console.error(err);
@@ -137,7 +146,7 @@ router.post ("/", async (req,res) => {
             type:"SIGNUP",
             token:`${token.toString("base64")}`,
             created: moment().format("YYYY-MM-DD HH:mm:ss"), 
-            expired: moment().add(1,"d").format("YYYY-MM-DD HH:mm:ss"), 
+            expired: moment().add(1,"d").format("YYYY-MM-DD HH:mm:ss") 
         });
         try {
             const verify = await newToken.save();
