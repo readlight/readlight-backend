@@ -4,14 +4,15 @@ import { escape as urlencode } from "querystring";
 import { createTransport } from "nodemailer";
 import { getClientIp } from "request-ip";
 import { readFileSync } from "fs";
-import { db_error } from "../../app";
+import { db_error } from "../../../app";
 import moment from "moment";
-import Token from "../../models/token";
-import authLog from "../../models/authlog";
-import User from "../../models/user";
+import Token from "../../../models/token";
+import authLog from "../../../models/authlog";
+import User from "../../../models/user";
 
 const router = Router();
 
+//# SEND PASSWORD RESET LINK TO USER
 router.put ("/:email", async (req,res) => {
     var _response = { "result" : "ERR_SERVER_FAILED_TEMPORARILY" };
 
@@ -115,8 +116,8 @@ router.put ("/:email", async (req,res) => {
 
     //# SEND VERIFICATION MAIL
     try {
-        const exampleEmail = readFileSync(__dirname + "/../../models/html/pwdreset.html").toString();
-        const emailData = exampleEmail.replace("####INPUT-YOUR-LINK_HERE####", `https://api.readlight.me/auth/resetpwd?email=${urlencode(_user.email)}&&token=${urlencode(token.toString("base64"))}`);
+        const exampleEmail = readFileSync(__dirname + "/../../../models/html/email/pwdreset.html").toString();
+        const emailData = exampleEmail.replace("####INPUT-YOUR-LINK_HERE####", `https://api.readlight.me/auth/pwdreset?email=${urlencode(_user.email)}&&token=${urlencode(token.toString("base64"))}`);
         const mailOptions = {
             from: "ReadLight<no-reply@readlight.me>",
             to: _user.email, 

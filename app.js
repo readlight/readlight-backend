@@ -4,6 +4,7 @@ import path from "path";
 import qs from "querystring";
 import fs from "fs";
 import { config } from "dotenv";
+import express_ejs from "ejs";
 import express, { json, urlencoded } from "express";
 import { connect, connection } from "mongoose";
 
@@ -25,6 +26,7 @@ try {
     app.use(cookieParser());
 
     app.use("/", router);
+    app.engine('html', express_ejs.renderFile);
 
     /**
     * DataBase Connect Using SSL Verification && Reconnect when DataBase had been disconnected.

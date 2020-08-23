@@ -163,7 +163,7 @@ router.post ("/", async (req,res) => {
 
         //# SEND VERIFICATION MAIL
         try {
-            const exampleEmail = readFileSync(__dirname + "/../../models/html/active.html").toString();
+            const exampleEmail = readFileSync(__dirname + "/../../models/html/email/active.html").toString();
             const emailData = exampleEmail.replace("####INPUT-YOUR-LINK_HERE####", `https://api.readlight.me/auth/active?email=${urlencode(email)}&&token=${urlencode(token.toString("base64"))}`);
             const mailOptions = {
                 from: "ReadLight<no-reply@readlight.me>",
