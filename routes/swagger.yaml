@@ -192,7 +192,7 @@ paths:
         - account
       summary: Non Social User Password Reset Email Send 
       description: api node for reset password
-      operationId: resetpwd-send
+      operationId: pwdreset-send
       produces:
         - application/json
         - application/xml

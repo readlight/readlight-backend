@@ -3,8 +3,9 @@ import signup from "./signup";
 import active from "./active";
 import login from "./login";
 import jwtdecode from "./jwtdecode";
-import pwdreset from "./pwdreset";
 import social_kakao from "./social_kakao";
+
+import pwdreset from "./pwdreset/";
 
 const router = Router();
 router.use ("/signup", signup);
