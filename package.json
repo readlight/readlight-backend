@@ -4,7 +4,8 @@
   "description": "restful api server of readlight service",
   "main": "serve.js",
   "scripts": {
-    "build": "babel ./ --out-dir build --delete-dir-on-start --include-dotfiles --ignore node_modules && cp -r ./config ./build/config && cp ./routes/swagger.yaml ./build/routes/swagger.yaml && cp -r ./models/html ./build/models/html",
+    "build": "babel ./ --out-dir build --delete-dir-on-start --include-dotfiles --ignore node_modules --ignore models/html && yarn copy",
+    "copy": "cp -r ./config ./build/config && cp ./routes/swagger.yaml ./build/routes/swagger.yaml && cp -r ./models/html ./build/models/html",
     "start": "pm2 start ./build/serve.js -o ./build/yarn-serve.log",
     "restart": "pm2 restart serve",
     "status": "pm2 status",
