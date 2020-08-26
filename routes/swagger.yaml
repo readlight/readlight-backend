@@ -209,6 +209,8 @@ paths:
             description: default reponse model
             schema:
               $ref: "#/definitions/apiResult"
+        '200':
+          description: user password reset email sent.
         '403':
           description: >-
             Request denied because you are not authorized.<br>
@@ -221,6 +223,50 @@ paths:
           description: password reset email sending failed.
         '500':
           description: api server connection is unstable (cause of network status)
+    post:
+      tags:
+        - account
+      summary: Non Social User Password Reset
+      description: api node for reset password
+      operationId: pwdreset-callback
+      produces:
+        - application/json
+        - application/xml
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: token
+          in: formData
+          description: The token for password reset.
+          required: true
+          type: string
+        - name: email
+          in: path
+          description: user account email
+          required: true
+          type: string
+        - name: password
+          in: formData
+          description: new account password
+          required: true
+          type: string
+      responses:
+        default:
+            description: default reponse model
+            schema:
+              $ref: "#/definitions/apiResult"
+        '200':
+          description: account password change finished.
+        '409':
+          description: >-
+            resetToken clien provided is not valid to change password or<br>
+            account client provided is not acceptable to change password.
+        '412':
+          description: data client provided doesn't satisfy format.
+        '423':
+          description: user action denied because account closed.
+        '500':
+          description: api server connection is unstable (cause of network status) 
   /auth/social-kakao:
     put:
       tags:

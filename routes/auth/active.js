@@ -33,8 +33,8 @@ router.get ("/", async (req,res) => {
     /**
      * FIND USER ON DATABASE USING EMAIL
      */
-    const user = await User.findOne({"email" : email, "enable" : "unknown"});
-    if (!user) {
+    const _user = await User.findOne({"email" : email, "enable" : "unknown"});
+    if (!_user) {
         _response.result = "ERR_USER_NOT_FOUND";
         res.status(409).json(_response);
         return;
