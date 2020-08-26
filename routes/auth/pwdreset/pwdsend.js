@@ -96,7 +96,7 @@ router.put ("/:email", async (req,res) => {
     const token = randomBytes(30); 
     const newToken = new Token ({
         owner: _user.email,
-        type:"RESETPWD",
+        type:"PWDRESET",
         token:`${token.toString("base64")}`,
         created: moment().format("YYYY-MM-DD HH:mm:ss"), 
         expired: moment().add(1,"d").format("YYYY-MM-DD HH:mm:ss") 
