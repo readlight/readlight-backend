@@ -1,1 +1,65 @@
-/var/readlight/frontend/common/api/pwdreset.css
+@import url('https://fonts.googleapis.com/css2?family=Oswald&display=swap');
+/**
+ * THIS FILE SHOULD BE ACCESSED THROUGH https://api.readlight.me/common/api/pwdreset.css
+ */
+
+/* Style all input fields */
+input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-top: 6px;
+    margin-bottom: 16px;
+}
+
+/* Style the submit button */
+input[type=submit] {
+    background-color: #426AFC;
+    color: white;
+}
+
+/* Style the container for inputs */
+.container {
+    font-family: 'Oswald', sans-serif;
+    background-color: #f1f1f1;
+    padding: 20px;
+}
+
+.center {
+    text-align: center;
+}
+
+.pwdchk-div {
+    width: 100%;
+    float: left;
+}
+
+span {
+    font-size: small;
+    color: #FF0000;
+    font-weight: bolder;
+    visibility: hidden;
+}
+
+h5 {
+    text-align: center;
+    font-weight: bolder;
+    color: #FF0000;
+}
+
+
+/* 모바일 */
+@media screen and (max-width: 568px) {
+    span#alerttext {
+        display: block;
+    }
+}
+
+/* 모바일 아님 */
+@media screen and (min-width: 569px) {
+    span#alerttext {
+        margin-left: 0.3rem;
+    }
+}
