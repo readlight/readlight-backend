@@ -46,7 +46,7 @@ window.onload = function() {
     pwd.oninput = pwdchk.oninput;
 
     resetform.onsubmit = function() {
-        var password_regex = /^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/;
+        var password_regex = /^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=*()]).*$/;
         if (!password_regex.test(pwd.value)){
             alert("올바른 비밀번호 형식이 아닙니다.");
             return false;
