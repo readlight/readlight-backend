@@ -78,7 +78,7 @@ router.get ("/", async (req,res) => {
      */
     const _verify = await User.updateOne( {"email" : email , "enable" : "unknown" }, {"enable" : "verified" } );
     if (!_verify) {
-        _response.result = "ERR_USER_UPDATE_FAILED";
+        _response.result = "ERR_USER_STATE_UPDATE_FAILED";
         res.status(500).json(_response);
         SAVE_LOG(_response);
         return;

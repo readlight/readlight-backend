@@ -57,6 +57,7 @@ paths:
           description: password of user account
           required: true
           type: string
+          format: password
         - name: phone
           in: formData
           description: telnumber of user account
@@ -104,6 +105,7 @@ paths:
           description: The token for activation
           required: true
           type: string
+          format: password
       responses:
         default:
             description: default reponse model
@@ -140,6 +142,7 @@ paths:
           description: password of account
           required: true
           type: string
+          format: password
       responses:
         default:
             description: default reponse model
@@ -150,7 +153,7 @@ paths:
           schema:
             $ref: "#/definitions/apiLoginResult"
         '409':
-          description: account client provided not exist.
+          description: no accounts were found that match the information client entered.
         '412':
           description: data client provided doesn't satisfy format.
         '423':
@@ -175,6 +178,7 @@ paths:
           description: The token for verification
           required: true
           type: string
+          format: password
       responses:
         default:
             description: default reponse model
@@ -186,6 +190,59 @@ paths:
             $ref: "#/definitions/UserInfo"
         '500':
           description: jwt token decode failed.
+  /auth/pwdchange:
+    put:
+      tags:
+        - account
+      summary: Non Social User password Change
+      description: api node for change password
+      operationId: pwdchange
+      produces:
+        - application/json
+        - application/xml
+      security:
+        - BasicAuth: []
+      parameters:
+        - name: email
+          in: formData
+          description: user account email
+          required: true
+          type: string
+        - name: curpassword
+          in: formData
+          description: user current password
+          required: true
+          type: string
+          format: password
+        - name: newpassword
+          in: formData
+          description: user new password
+          required: true
+          type: string
+          format: password
+      consumes:
+        - application/x-www-form-urlencoded
+      responses:
+        default:
+            description: default reponse model
+            schema:
+              $ref: "#/definitions/apiResult"
+        '200':
+          description: user password change task finished.
+        '403':
+          description: >-
+            Request denied because you are not authorized.<br>
+            Please apply authorization header.
+        '409':
+          description: >-
+            no accounts were found that match the information you entered or
+            social login account are denied to changed account password.
+        '423':
+          description: user login denied because account closed.
+        '424':
+          description: new password must be different from the old password. 
+        '500':
+          description: api server connection is unstable (cause of network status)
   /auth/pwdreset/{email}:
     put:
       tags:
@@ -240,6 +297,7 @@ paths:
           description: The token for password reset.
           required: true
           type: string
+          format: password
         - name: email
           in: path
           description: user account email
@@ -250,6 +308,7 @@ paths:
           description: new account password
           required: true
           type: string
+          format: password
       responses:
         default:
             description: default reponse model
@@ -287,6 +346,7 @@ paths:
           description: The Kakao token for process.
           required: true
           type: string
+          format: password
       responses:
         default:
             description: default reponse model

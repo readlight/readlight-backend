@@ -95,7 +95,7 @@ router.post ("/", async (req,res) => {
     /**
      * CHANGE USER ENABLE STATE
      */
-    const _verify = await User.updateOne( {"email" : email }, {"password" : encryptPassword.toString("base64")} );
+    const _verify = await User.updateOne( {"email" : email }, {"password" : encryptPassword.toString("base64"), "lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")} );
     if (!_verify) {
         _response.result = "ERR_USER_UPDATE_FAILED";
         res.status(500).json(_response);
