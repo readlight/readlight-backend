@@ -7,7 +7,7 @@
     "build": "babel ./ --out-dir build --delete-dir-on-start --include-dotfiles --ignore node_modules --ignore models/html && yarn copy",
     "copy": "cp -r ./config ./build/config && cp ./routes/swagger.yaml ./build/routes/swagger.yaml && cp -r ./models/html ./build/models/html",
     "start": "pm2 start ./build/serve.js -o ./build/yarn-serve.log",
-    "test": "yarn build",
+    "test": "babel ./ --out-dir build --delete-dir-on-start --include-dotfiles --ignore node_modules --ignore models/html",
     "restart": "pm2 restart serve",
     "status": "pm2 status",
     "stop": "pm2 delete serve",
