@@ -24,7 +24,7 @@ router.put ("/", async (req,res) => {
      * CHECK WHETHER PROVIDED POST DATA IS VALID
      */
     const { email, curpassword, newpassword } = req.body;
-    const password_chk = /^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/;
+    const password_chk = /^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=*()]).*$/;
     if (!(curpassword && password_chk.test(curpassword) && newpassword && password_chk.test(newpassword))) {
         _response.result = "ERR_DATA_FORMAT_INVALID";
         res.status(412).json(_response);
