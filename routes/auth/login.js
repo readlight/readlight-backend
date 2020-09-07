@@ -2,106 +2,61 @@ import { Router } from "express";
 import { pbkdf2Sync } from "crypto";
 import { getClientIp } from "request-ip";
 import { db_error } from "../../app";
-import { jwtSign } from "../jwtToken.js";
+import { jwtSign } from "../coms/jwtToken.js";
 import moment from "moment";
+import loadRegex from "../coms/loadRegex";
+import responseFunction from "../coms/apiResponse";
 import authLog from "../../models/authlog";
 import User from "../../models/user";
 
 const router = Router();
 
 router.post ("/", async (req,res) => {
-    var _response = { "result" : "ERR_SERVER_FAILED_TEMPORARILY" };
-
-    /**
-     * CHECK DATABASE STATE
-     */
-    if (!(db_error === null)) {
-        _response.result = "ERR_DATABASE_NOT_CONNECTED";
-        res.status(500).json(_response);
-        return;
-    }
-
-    /**
-     * CHECK WHETHER PROVIDED POST DATA IS VALID
-     */
-    const { email, password } = req.body;
-    const email_chk = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i,
-        password_chk = /^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=*()]).*$/;
+    //#CHECK DATABASE AND CHECK AUTHORIZATION HEADER USING BASIC AUTH
+    if (!(db_error === null)) return await responseFunction(res, 500, {"msg":"ERR_DATABASE_NOT_CONNECTED"}, null);
+    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) return await responseFunction(res, 403, {"msg":"ERR_NOT_AUTHORIZED_IDENTITY"}, null);
     
-    if (!(email && password && email_chk.test(email) && password_chk.test(password))) {
-        _response.result = "ERR_DATA_FORMAT_INVALID";
-        res.status(412).json(_response);
-        return;
-    }  
+    //#CHECK WHETHER PROVIDED POST DATA IS VALID
+    const { email, password } = req.body;
+    const { emailchk, passwdchk } = await loadRegex();
+    if (!(email && password)) return await responseFunction(res, 412, {"msg":"ERR_DATA_NOT_PROVIDED"}, null);
+    if (!(emailchk.test(email) && passwdchk.test(password))) return await responseFunction(res, 412, {"msg":"ERR_DATA_FORMAT_INVALID"}, null);
 
-    /**
-     * GET USER OBJECT THROUGH EMAIL
-     */
+    //#GET USER OBJECT THROUGH EMAIL
     const _user = await User.findOne({"email" : email});
-    if (!_user) {
-        _response.result = "ERR_USER_NOT_FOUND";
-        res.status(409).json(_response);
-        return;
-    } else if (_user.enable === "rejected") {
-        _response.result = "ERR_USER_ACCESS_DENIED";
-        res.status(423).json(_response);
-        return;
-    }
-
-    /**
-     * SAVE ACCESS LOG ON DATABASE
-     */
-    const SAVE_LOG = (_response) => {
+    if (_user === null || _user === undefined) return await responseFunction(res, 409, {"msg":"ERR_USER_NOT_FOUND"}, null);
+    else if (_user.enable === "rejected") return await responseFunction(res, 423, {"msg":"ERR_USER_ACCESS_DENIED"}, null);
+    
+    //#SAVE ACCESS LOG ON DATABASE
+    const SAVE_LOG = async (_response) => {
         const createLog = new authLog ({
             timestamp : moment().format("YYYY-MM-DD HH:mm:ss"), 
             causedby : email,
             originip : getClientIp(req),
             category : "LOGIN",
             details : req.body,
-            result : _response 
+            response : _response 
         });
-        
-        createLog.save(async (err) => {
-            //# HANDLE WHEN SAVE TASK FAILED
+        await createLog.save(async (err) => {
             if (err) console.error(err);
         });
     };
 
-    /**
-     * COMPARE DB_PASSWORD WITH PROVIDED PASSWORD
-     */
-    const encryptPassword = pbkdf2Sync(password, _user.salt, 100000, 64, "SHA512");
+    //COMPARE DB_PASSWORD WITH PROVIDED PASSWORD
+    const encryptPassword = await pbkdf2Sync(password, _user.salt, 100000, 64, "SHA512");
     req.body.password = encryptPassword.toString("base64"); //HIDE INPUT_PW ON DATABASE
-    if (encryptPassword.toString("base64") !== _user.password) {
-      _response.result = "ERR_USER_AUTH_FAILED";
-      res.status(409).json(_response);
-      SAVE_LOG(_response);
-      return;
-    }
+    if (!(encryptPassword.toString("base64") === _user.password)) return await responseFunction(res, 409, {"msg":"ERR_USER_AUTH_FAILED"}, null);
 
-    /**
-     * UPDATE LAST_LOGIN FIELD
-     */
-    _response.result = "SUCCEED_USER_LOGIN";
-    const update = await User.updateOne({"email": email }, {"lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")});
-    if (!update) console.error(update);
+    //#UPDATE LAST_LOGIN FIELD
+    const _update = await User.updateOne({"email": email }, {"lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")});
+    if (!_update) return await responseFunction(res, 500, {"msg":"ERR_USER_LOGIN_UPDATE_FAILED"}, null, _update);
 
-    /**
-     * GENERATE JWT TOKEN AND WRITE ON DOCUMENT
-     */
+    //#GENERATE JWT TOKEN AND WRITE ON DOCUMENT
     _user.password = undefined;
     _user.salt = undefined;
-    const jwtresult = jwtSign(_user);
-    if (!jwtresult) {
-      _response.result = "ERR_JWT_GENERATE_FAILED";
-      res.status(500).json(_response);
-      SAVE_LOG(_response);
-      return;
-    }
-    _response.token = jwtresult;
-    res.status(200).json(_response);
-    SAVE_LOG(_response);
+    const { jwttoken, tokenerror } = await jwtSign(_user);
+    if (!(tokenerror === null)) return await SAVE_LOG(await responseFunction(res, 500, {"msg":"ERR_JWT_GENERATE_FAILED"}, null, tokenerror));
+    return await SAVE_LOG(await responseFunction(res, 200, {"msg":"SUCCEED_USER_LOGIN"}, jwttoken));
 });
-
 
 export default router;
