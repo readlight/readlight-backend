@@ -1,110 +1,46 @@
 import { Router } from "express";
 import { pbkdf2Sync, randomBytes, createCipheriv} from "crypto";
 import { escape as urlencode } from "querystring";
-import { createTransport } from "nodemailer";
+import responseFunction from "../coms/apiResponse";
+import mailConnect from "../coms/mailconnect";
+import loadRegex from "../coms/loadRegex";
+import moment from "moment";
 import { getClientIp } from "request-ip";
 import { readFileSync } from "fs";
 import { db_error } from "../../app";
-import moment from "moment";
-import Token from "../../models/token";
+import { jwtSign } from "../coms/jwtToken.js";
 import authLog from "../../models/authlog";
+import Token from "../../models/token";
 import User from "../../models/user";
 
 const router = Router();
 router.post ("/", async (req,res) => {
-    var _response = { "result" : "ERR_SERVER_FAILED_TEMPORARILY" };
+    //#CHECK DATABASE AND MAIL_SERVER STATE AND CHECK AUTHORIZATION HEADER USING BASIC AUTH
+    const { transporter, mailerror } = await mailConnect();
+    if (!(db_error === null)) return await responseFunction(res, 500, {"msg":"ERR_DATABASE_NOT_CONNECTED"}, null);
+    if (!(mailerror === null)) return await responseFunction(res, 500, {"msg":"ERR_MAIL_SERVER_NOT_CONNECTED"}, null, mailerror);
+    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) return await responseFunction(res, 403, {"msg":"ERR_NOT_AUTHORIZED_IDENTITY"}, null);
 
-    /**
-     * CHECK DATABASE AND MAIL_SERVER STATE
-     */
-    if (!(db_error === null)) {
-        _response.result = "ERR_DATABASE_NOT_CONNECTED";
-        res.status(500).json(_response);
-        return;
-    }
+    //#CHECK WHETHER PROVIDED POST DATA IS VALID
+    const { email, password, name, phone } = req.body;
+    const { emailchk, passwdchk, phonechk, namechk } = await loadRegex();
+    if (!(email && password && name && phone)) return await responseFunction(res, 412, {"msg":"ERR_DATA_NOT_PROVIDED"}, null);
+    if (!(emailchk.test(email) && passwdchk.test(password) && phonechk.test(phone) && namechk.test(name))) return await responseFunction(res, 412, {"msg":"ERR_DATA_FORMAT_INVALID"}, null);
 
-    const transporter = createTransport({
-        host: process.env.MAIL_AUTH_SMTP_HOST,
-        port: process.env.MAIL_AUTH_SMTP_PORT,
-        secure: process.env.MAIL_AUTH_SMTP_SSL,
-        auth: {
-            user: process.env.MAIL_AUTH_USER,
-            pass: process.env.MAIL_AUTH_PASSWORD
-        }
-    });
-
-    try {
-        const verify = await transporter.verify();
-        if(!verify) throw (verify);
-    }
-    catch (err) {
-        console.error(err);
-        _response.result = "ERR_MAIL_SERVER_NOT_CONNECTED";
-        res.status(500).json(_response);
-        return;
-    }
-
-    /**
-     * CHECK AUTHORIZATION HEADER USING BASIC AUTH
-     */
-    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) {
-        _response.result = "ERR_NOT_AUTHORIZED_IDENTITY";
-        res.status(403).json(_response);
-        return;
-    }
-
-    /**
-     * CHECK WHETHER PROVIDED POST DATA IS VALID
-     */
-    const { email,password,name,phone } = req.body;
-    const email_chk = /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i,
-          password_chk = /^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=*()]).*$/,
-          phone_chk = /^(?:(010-?\d{4})|(01[1|6|7|8|9]-?\d{3,4}))-?\d{4}$/,
-          name_chk = /^[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-1 ]{2,10}/;
-    
-    if (!(email && password && name && phone)) {
-        _response.result = "ERR_DATA_NOT_PROVIDED";
-        res.status(412).json(_response);
-        return;
-    }
-    if (!(email_chk.test(email) && password_chk.test(password) && name_chk.test(name) && phone_chk.test(phone))) { 
-        _response.result = "ERR_DATA_FORMAT_INVALID";
-        res.status(412).json(_response);
-        return;   
-    }
-
-    /**
-     * CHECK WHETHER EMAIL IS USED
-     */
-    
+    //#CHECK WHETHER EMAIL IS USED
     const _user = await User.findOne({"email" : email});
-    if (_user) {
-        _response.result = "ERR_EMAIL_DUPLICATION";
-        res.status(409).json(_response);
-        return;
-    }
+    if (!(_user === null || _user === undefined)) return await responseFunction(res, 409, {"msg":"ERR_EMAIL_DUPLICATION"}, null);
 
-    /**
-     * ENCRYPT USER PASSWORD WITH RANDOM SALT
-     */
-    const salt = randomBytes(32),iv = randomBytes(16);
-    const encryptPassword = pbkdf2Sync(password, salt.toString("base64"), 100000, 64, "SHA512");
-    if (!encryptPassword) {
-        _response.result = "ERR_PASSWORD_ENCRYPT_FAILED";
-        res.status(500).json(_response);
-        return;
-    }
-    const cipher = createCipheriv("aes-256-cbc", Buffer.from(salt), iv);
-    const encryptPhone = Buffer.concat([cipher.update(phone), cipher.final()]);
-    if (!encryptPhone) {
-        _response.result = "ERR_PHONE_ENCRYPT_FAILED";
-        res.status(500).json(_response);
-        return;
-    }
+    ///#ENCRYPT USER PASSWORD WITH RANDOM SALT
+    const salt = await randomBytes(32), iv = await randomBytes(16);
+    const encryptPassword = await pbkdf2Sync(password, salt.toString("base64"), 100000, 64, "SHA512");
+    if (!encryptPassword) return await responseFunction(res, 500, {"msg":"ERR_PASSWORD_ENCRYPT_FAILED"}, null, encryptPassword);
 
-    /**
-     * SAVE USER ACCOUNT ON DATABASE
-     */
+    const cipher = await createCipheriv("aes-256-cbc", Buffer.from(salt), iv);
+    const encryptPhone = await Buffer.concat([cipher.update(phone), cipher.final()]);
+    if (!encryptPhone) return await responseFunction(res, 500, {"msg":"ERR_PHONE_ENCRYPT_FAILED"}, null, encryptPhone);
+
+    //#SAVE USER ACCOUNT ON DATABASE
     const createUser = new User ({
         email,
         password: `${encryptPassword.toString("base64")}`,
@@ -113,55 +49,43 @@ router.post ("/", async (req,res) => {
         salt: `${salt.toString("base64")}`
     });
 
-    /**
-     * SAVE LOG FUNCTION
-     */
-    const SAVE_LOG = (_response) => {
+    //#SAVE LOG FUNCTION
+    const SAVE_LOG = async (_response) => {
         const createLog = new authLog ({
             timestamp : moment().format("YYYY-MM-DD HH:mm:ss"), 
             causedby : email,
             originip : getClientIp(req),
             category : "SIGNUP",
             details : createUser,
-            result : _response
+            response : _response,
         });
-        createLog.save((err) => {
+        await createLog.save(async (err) => {
             if (err) console.error(err);
         });
     };
 
-    await createUser.save(async (err) => {
-        //# HANDLE WHEN SAVE TASK FAILED
-        if (err) {
-            _response.result = "ERR_USER_SAVE_FAILED";
-            _response.error = err;
-            res.status(500).json(_response);
-            return;
-        }
+    await createUser.save(async (save_error) => {
+        //#HANDLE WHEN SAVE TASK FAILED
+        if (save_error) return await responseFunction(res, 500, {"msg":"ERR_USER_SAVE_FAILED"}, null, save_error);
         
-        //# GENERATE TOKEN AND SAVE ON DATABASE
-        const token = randomBytes(30); 
+        //#GENERATE TOKEN AND SAVE ON DATABASE
+        const token = await randomBytes(30); 
         const newToken = new Token ({
             owner: email,
             type:"SIGNUP",
             token:`${token.toString("base64")}`,
             created: moment().format("YYYY-MM-DD HH:mm:ss"), 
-            expired: moment().add(1,"d").format("YYYY-MM-DD HH:mm:ss") 
+            expired: moment().add(1,"d").format("YYYY-MM-DD HH:mm:ss"), 
         });
         try {
             const verify = await newToken.save();
-            if (!verify) throw (verify);
+            if (!verify) throw(verify);
         }
-        catch (err) {
-            console.error(err);
-            _response.result = "ERR_AUTH_TOKEN_SAVE_FAILED";
-            _response.error = err;
-            res.status(424).json(_response);
-            SAVE_LOG(_response);
-            return;
+        catch (error) {
+            return await SAVE_LOG(await responseFunction(res, 424, {"msg":"ERR_AUTH_TOKEN_SAVE_FAILED"}, null, error));
         }
 
-        //# SEND VERIFICATION MAIL
+        //#SEND VERIFICATION MAIL
         try {
             const exampleEmail = readFileSync(__dirname + "/../../models/html/email/active.html").toString();
             const emailData = exampleEmail.replace("####INPUT-YOUR-LINK_HERE####", `https://api.readlight.me/auth/active?email=${urlencode(email)}&&token=${urlencode(token.toString("base64"))}`);
@@ -171,20 +95,17 @@ router.post ("/", async (req,res) => {
                 subject: "[ReadLight] Account Verification Email", 
                 html: emailData
             };
-
+            createUser.password = undefined;
+            createUser.salt = undefined;
+            const { jwttoken, tokenerror } = await jwtSign(createUser);
+            if (!(tokenerror === null)) return SAVE_LOG(await responseFunction(res, 500, {"msg":"ERR_JWT_GENERATE_FAILED"}, jwttoken, tokenerror));
+            
             const sendMail = await transporter.sendMail(mailOptions);
-            if (sendMail) {
-                _response.result = "SUCCEED_USER_CREATED";
-                res.status(200).json(_response);
-                SAVE_LOG(_response);
-            }
+            if (!sendMail) throw("UNKNOWN_MAIL_SEND_ERROR_ACCURED");
+            return await SAVE_LOG(await responseFunction(res, 200, {"msg":"SUCCEED_USER_CREATED"}, jwttoken));
         }
-        catch (err) {
-            console.error(err); //SHOW ERROR FOR PM2 INSTANCE
-            _response.result = "ERR_VERIFY_EMAIL_SEND_FAILED";
-            _response.error = err.toString();
-            res.status(424).json(_response);
-            SAVE_LOG(_response);
+        catch (error) {
+            return await SAVE_LOG(await responseFunction(res, 424, {"msg":"ERR_VERIFY_EMAIL_SEND_FAILED"}, null, error));
         }
     });
 });
