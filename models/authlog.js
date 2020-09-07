@@ -6,7 +6,7 @@ const authlog = new Schema({
     originip: String,
     category: String,
     details: Object,
-    result: Object,
+    response: Object,
     memo: String
 }, {
     versionKey: false
