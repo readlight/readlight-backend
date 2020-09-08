@@ -131,6 +131,8 @@ paths:
         - application/xml
       consumes:
         - application/x-www-form-urlencoded
+      security:
+        - BasicAuth: []
       parameters:
         - name: email
           in: formData
@@ -150,8 +152,6 @@ paths:
               $ref: "#/definitions/apiResult"
         '200':
           description: user login succeed and json token published.
-          schema:
-            $ref: "#/definitions/apiLoginResult"
         '409':
           description: no accounts were found that match the information client entered.
         '412':
@@ -190,7 +190,7 @@ paths:
             $ref: "#/definitions/UserInfo"
         '500':
           description: jwt token decode failed.
-  /auth/pwdchange:
+  /auth/pwdchange/{email}:
     put:
       tags:
         - account
@@ -204,7 +204,7 @@ paths:
         - BasicAuth: []
       parameters:
         - name: email
-          in: formData
+          in: path
           description: user account email
           required: true
           type: string
@@ -355,8 +355,6 @@ paths:
               $ref: "#/definitions/apiResult"
         '200':
           description: kakao user login succeed and json token published.
-          schema:
-            $ref: "#/definitions/apiLoginResult"
         '403':
           description: >-
             Request denied because you are not authorized.<br><br>
@@ -380,32 +378,48 @@ definitions:
     type: object
     properties:
       result: 
-        type: string
-      error:
-        type: string
-  apiLoginResult:
-    type: object
-    properties:
-      result: 
-        type: string
-      token:
-        type: string
+        type: object
+        properties:
+          statusCode:
+            type: number
+          body:
+            type: object
+            properties:
+              msg:
+                type: string
+          output:
+            type: string
+          error:
+            type: string
   UserInfo:
     type: object
     properties:
-      enable: 
-        type: boolean
-      email:
-        type: string
-      name:
-        type: string
-      phone:
-        type: string
-      lastlogin:
-        type: string
-        format: date
-        pattern: 'yyyy-MM-dd hh:mm:ss'
-      created:
-        type: number
-      expired:
-        type: number
+      result: 
+        type: object
+        properties:
+          statusCode:
+            type: number
+          body:
+            type: object
+            properties:
+              msg:
+                type: string
+          output:
+            type: object
+            properties:
+              enable: 
+                type: string
+              email:
+                type: string
+              name:
+                type: string
+              phone:
+                type: string
+              lastlogin:
+                type: string
+              iat:
+                type: number
+              exp:
+                type: number
+          error:
+            type: string
