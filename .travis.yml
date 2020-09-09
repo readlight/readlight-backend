@@ -6,3 +6,11 @@ before_install:
 branches:
   only:
     - master
+notifications:
+  email:
+    recipients:
+      - backend@readlight.me
+    on_success: change # default: change
+    on_failure: always # default: always
+  slack:
+    secure: "PkzwaBU0xtsCSdn29M3/YoIkQh71vJf5SkvSJCwyh8/ODuU8/RMh+yLkBjxMTcp8mxLEUoSw9OsSQC+CFtug9rnN/v/R7Cudtpk1kC0V7szpz7cxieK3CWEcYnhYPi0lBPax11nUrUzxi7Nfb4xc8y5EKVe7pU+BSbut1E44LmaZ1KwYli8rUuVTUhEVpwTDDbjyJrSsfk8qwwE6XziGWShR/yCaHS/fxLKu8iUxNmp0Ns68XQ7aF/Or9+7jVOgRi97fwB4JuYmBWjU1ujwnlg8z3iiaEBd+yBJO0NixzzsQbrzmw6v8ek3hVeUkh2h9lsMizf4zinaGmhpXDIWkcEz815lQW1kFZonCQPJTpW8em0IHVlpV/nykVL+pHhj96oRvQIKxm/OT+THJTFeZedVF7MlJjhfAysFFQaUo1IZLmsuBNQf85N4H2GqpMfu7hMX/IrPsR8woZY901sLm6Y64bmi8e/IRLpaopftL0PLi2PV9HbMuuTJQ0gmRY/n94hKUHXtYtB0Y0HRXUfad0xwM2uWG55dhdjSgbNCAsRGPkkivt/9BfeYo5/S7k4iub1l/ElbbSbegWC3M7YTgOSUOBgfdUK1fJhTPo2oYNqPlxtplfoo/qhPANLfdYylZNFRvftLNfM+6M9JcW6v/GyX+qRjc/WS+21u8GMTyGT8="
