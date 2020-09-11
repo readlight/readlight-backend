@@ -17,21 +17,21 @@ const router = Router();
 router.put ("/:email", async (req,res) => {
     //#CHECK DATABASE AND MAIL_SERVER STATE AND CHECK AUTHORIZATION HEADER USING BASIC AUTH
     const { transporter, mailerror } = await mailConnect();
-    if (!(db_error === null)) return await responseFunction(res, 500, "ERR_DATABASE_NOT_CONNECTED");
-    if (!(mailerror === null)) return await responseFunction(res, 500, "ERR_MAIL_SERVER_NOT_CONNECTED", null, mailerror);
-    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) return await responseFunction(res, 403, "ERR_NOT_AUTHORIZED_IDENTITY");
+    if (db_error !== null) return await responseFunction(res, 500, "ERR_DATABASE_NOT_CONNECTED");
+    if (mailerror !== null) return await responseFunction(res, 500, "ERR_MAIL_SERVER_NOT_CONNECTED", null, mailerror);
+    if (req.headers.authorization !== `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`) return await responseFunction(res, 403, "ERR_NOT_AUTHORIZED_IDENTITY");
 
     //#CHECK WHETHER PROVIDED EMAIL USER EXIST
-    const _user = await User.findOne({"email" : req.params.email});
+    const _user = await User.findOne({"account.email" : req.params.email});
     if (_user === null || _user === undefined) return await responseFunction(res, 409, "ERR_TARGET_USER_NOT_FOUND");
-    else if (_user.enable === "rejected") return await responseFunction(res, 423, "ERR_USER_ACCESS_DENIED");
-    else if (_user.enable !== "verified") return await responseFunction(res, 409, "ERR_PASSWORD_RESET_NOT_ACCEPTED");
+    else if (_user.account.status === "rejected") return await responseFunction(res, 423, "ERR_USER_ACCESS_DENIED");
+    else if (_user.account.status !== "verified") return await responseFunction(res, 409, "ERR_PASSWORD_RESET_NOT_ACCEPTED");
 
     //#SAVE LOG FUNCTION
     const SAVE_LOG = async (_response) => {
         const createLog = new authLog ({
             timestamp : moment().format("YYYY-MM-DD HH:mm:ss"), 
-            causedby : _user.email,
+            causedby : _user.account.email,
             originip : getClientIp(req),
             category : "RESET_PASSWORD",
             response : _response
@@ -44,7 +44,7 @@ router.put ("/:email", async (req,res) => {
     //#GENERATE TOKEN AND SAVE ON DATABASE
     const token = randomBytes(30); 
     const newToken = new Token ({
-        owner: _user.email,
+        owner: _user.account.email,
         type:"PWDRESET",
         token:`${token.toString("base64")}`,
         created: moment().format("YYYY-MM-DD HH:mm:ss"), 
@@ -61,10 +61,10 @@ router.put ("/:email", async (req,res) => {
     //#SEND VERIFICATION MAIL
     try {
         const exampleEmail = readFileSync(__dirname + "/../../../models/html/email/pwdreset.html").toString();
-        const emailData = exampleEmail.replace("####INPUT-YOUR-LINK_HERE####", `https://api.readlight.me/auth/pwdreset?email=${urlencode(_user.email)}&&token=${urlencode(token.toString("base64"))}`);
+        const emailData = exampleEmail.replace("####INPUT-YOUR-LINK_HERE####", `https://api.readlight.me/auth/pwdreset?email=${urlencode(_user.account.email)}&&token=${urlencode(token.toString("base64"))}`);
         const mailOptions = {
             from: "ReadLight<no-reply@readlight.me>",
-            to: _user.email, 
+            to: _user.account.email, 
             subject: "[ReadLight] Account Password Reset Email", 
             html: emailData
         };
