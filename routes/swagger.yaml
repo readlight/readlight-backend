@@ -429,16 +429,26 @@ components:
             decode: 
               type: object
               properties:
-                enable:
-                  type: string
-                email:
-                  type: string
-                name:
-                  type: string
-                phone:
-                  type: string
-                lastlogin:
-                  type: string
+                account:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                    email:
+                      type: string
+                    joined:
+                      type: string
+                service:
+                  type: object
+                  properties:
+                    subscription:
+                      type: string
+                profile:
+                  properties:
+                    name:
+                      type: string
+                    phone:
+                      type: string
                 iat:
                   type: number
                 exp:

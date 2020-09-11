@@ -3,7 +3,7 @@ import { sign as _sign, verify as _verify } from "jsonwebtoken";
 const jwtSign = (object) => {
     var _response = { "jwttoken" : null, "tokenerror" : true };
     try {
-        const signed = _sign(object.toJSON(), process.env.JWT_TOKEN_SECRETKEY, {expiresIn: "2h"});
+        const signed = _sign(object.toJSON(), process.env.JWT_TOKEN_SECRETKEY, {expiresIn: "7d"});
         _response.jwttoken = signed;
         _response.tokenerror = null;
         return _response;
