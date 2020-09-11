@@ -12,12 +12,12 @@ import User from "../../models/user";
 const router = Router();
 router.put ("/", async (req,res) => {
     //#CHECK DATABASE AND CHECK AUTHORIZATION HEADER USING BASIC AUTH
-    if (!(db_error === null)) return await responseFunction(res, 500, {"msg":"ERR_DATABASE_NOT_CONNECTED"}, null);
-    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) return await responseFunction(res, 403, {"msg":"ERR_NOT_AUTHORIZED_IDENTITY"}, null);
+    if (!(db_error === null)) return await responseFunction(res, 500, "ERR_DATABASE_NOT_CONNECTED");
+    if (!(req.headers.authorization === `Basic ${process.env.ACCOUNT_BASIC_AUTH_KEY}`)) return await responseFunction(res, 403, "ERR_NOT_AUTHORIZED_IDENTITY");
     
     //#CHECK WHETHER PROVIDED POST DATA IS VALID
     const { kakaotoken } = req.body;
-    if (!(kakaotoken)) return await responseFunction(res, 412, {"msg":"ERR_DATA_NOT_PROVIDED"}, null);
+    if (!(kakaotoken)) return await responseFunction(res, 412, "ERR_DATA_NOT_PROVIDED");
 
     //#REQUEST USER ACCOUNT INFORMATION TO KAKAO API
     const requestKakao = async () => {
@@ -31,8 +31,8 @@ router.put ("/", async (req,res) => {
             });
         });
     }, { error, statusCode, body } = await requestKakao();
-    if (error) return await responseFunction(res, 500, {"msg":"ERR_KAKAOAPI_CONNECT_FAILED"}, null, error);
-    else if (statusCode !== 200) return await responseFunction(res, 412, {"msg":"ERR_KAKAOAPI_TOKEN_INVALID"}, null, body);
+    if (error) return await responseFunction(res, 500, "ERR_KAKAOAPI_CONNECT_FAILED", null, error);
+    else if (statusCode !== 200) return await responseFunction(res, 412, "ERR_KAKAOAPI_TOKEN_INVALID", null, body);
     
     //#GENERATE USER REQUEST OBJECT
     const userObject = new Object();
@@ -43,7 +43,7 @@ router.put ("/", async (req,res) => {
         userObject.phone = body.kakao_account.birthday;      //SHOULD CHANGE FIELD WHEN BUSINESS APP ENABLED
     }
     catch (kakao_user_error) {
-        return await responseFunction(res, 412, {"msg":"ERR_KAKAOAPI_USER_INVALID"}, null, kakao_user_error);
+        return await responseFunction(res, 412, "ERR_KAKAOAPI_USER_INVALID", null, kakao_user_error);
     }
 
     //#GENERATE JWT TOKEN WHEN USER EXIST
@@ -64,29 +64,29 @@ router.put ("/", async (req,res) => {
 
     //#LOGIN WHEN USER EXIST
     if (!(_user === null || _user === undefined)) {
-        if (_user.enable === "rejected") return await responseFunction(res, 423, {"msg":"ERR_USER_ACCESS_DENIED"}, null);
+        if (_user.enable === "rejected") return await responseFunction(res, 423, "ERR_USER_ACCESS_DENIED");
         
         //#CHECK IF KAKAO ACCOUNT CI IS VALID
         if (!(_user.enable === "kakao" && userObject.password === _user.password))
-            return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 409,{"msg":"ERR_KAKAO_USER_MISMACH"}, null));
+            return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 409,"ERR_KAKAO_USER_MISMACH"));
 
         //#UPDATE LAST_LOGIN FIELD
         const _update = await User.updateOne({"email": userObject.email }, {"lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")});
-        if (!_update) return await responseFunction(res, 500, {"msg":"ERR_USER_LOGIN_UPDATE_FAILED"}, null, _update);
+        if (!_update) return await responseFunction(res, 500, "ERR_USER_LOGIN_UPDATE_FAILED", null, _update);
 
         //#GENERATE JWT TOKEN AND DEPLOY TO CLIENT
         _user.password = undefined;
         _user.salt = undefined;
         const { jwttoken, tokenerror } = await jwtSign(_user);
-        if (!(tokenerror === null)) return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 500, {"msg":"ERR_JWT_GENERATE_FAILED"}, jwttoken, tokenerror));
-        return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 200, {"msg":"SUCCEED_KAKAO_USER_LOGIN"}, jwttoken));
+        if (!(tokenerror === null)) return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", jwttoken, tokenerror));
+        return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 200, "SUCCEED_KAKAO_USER_LOGIN", {"token":jwttoken}));
     }
      
     //#SIGNUP NEW ACCOUNT ON DATABASE, NO VERIFICATION
     const salt = await randomBytes(32), iv = await randomBytes(16);
     const cipher = await createCipheriv("aes-256-cbc", Buffer.from(salt), iv);
     userObject.phone = iv.toString("hex") + ":" + Buffer.concat([cipher.update(userObject.phone), cipher.final()]).toString("hex");
-    if (!userObject.phone) return await responseFunction(res, 500, {"msg":"ERR_PHONE_ENCRYPT_FAILED"}, null, userObject.phone);
+    if (!userObject.phone) return await responseFunction(res, 500, "ERR_PHONE_ENCRYPT_FAILED", null, userObject.phone);
     
     //#SAVE USER ACCOUNT ON DATABASE
     const createUser = new User ({
@@ -101,14 +101,14 @@ router.put ("/", async (req,res) => {
 
     await createUser.save(async (save_error) => {
         //#HANDLE WHEN SAVE TASK FAILED
-        if (save_error) return await responseFunction(res, 500, {"msg":"ERR_USER_SAVE_FAILED"}, null, save_error);
+        if (save_error) return await responseFunction(res, 500, "ERR_USER_SAVE_FAILED", null, save_error);
 
         //#GENERATE JWT TOKEN AND DEPLOY TO CLIENT
         createUser.salt = undefined;
         createUser.password = undefined;
         const { jwttoken, tokenerror } = await jwtSign(createUser);
-        if (!(tokenerror === null)) return await SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 500, {"msg":"ERR_JWT_GENERATE_FAILED"}, jwttoken, tokenerror));
-        return await SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 200, {"msg":"SUCCEED_USER_CREATED"}, jwttoken));
+        if (!(tokenerror === null)) return await SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", null, tokenerror));
+        return await SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 200, "SUCCEED_USER_CREATED", {"token":jwttoken}));
     });   
 });
 

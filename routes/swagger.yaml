@@ -1,31 +1,19 @@
-swagger: '2.0'
+openapi: 3.0.0
 info:
-  description: >-
-    This is api docs for readlight.<br> If you
-    want to know our service more, please visit <a
-    href="https://readlight.me">HERE</a>.
+  description: This is api docs for readlight.
+    If you want to know our service more,
+    please visit HERE.
   version: 1.0.0
   title: ReadLight-Backend
-  termsOfService: 'https://readlight.me/terms/'
+  termsOfService: https://readlight.me/terms/
   contact:
     email: help@readlight.me
   license:
     name: Apache 2.0
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-host: api.readlight.me
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
 tags:
   - name: account
-    description: "User Authentification API"
-basePath: /
-schemes:
-  - https
-securityDefinitions:
-  JWTAuth:
-    type: apiKey
-    name: authorization
-    in: header
-  BasicAuth:
-    type: basic
+    description: User Authentification API
 paths:
   /auth/signup:
     post:
@@ -34,56 +22,54 @@ paths:
       summary: User SignUp
       description: api node for generating user account
       operationId: createUser
-      produces:
-        - application/json
-        - application/xml
-      consumes:
-        - application/x-www-form-urlencoded
       security:
         - BasicAuth: []
-      parameters:
-        - name: name
-          in: formData
-          description: name of user account
-          required: true
-          type: string
-        - name: email
-          in: formData
-          description: email of user account
-          required: true
-          type: string
-        - name: password
-          in: formData
-          description: password of user account
-          required: true
-          type: string
-          format: password
-        - name: phone
-          in: formData
-          description: telnumber of user account
-          required: true
-          type: string
-      responses:
-        default:
-            description: default reponse model
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+              type: object
+              properties:
+                name:
+                  description: name of user account
+                  type: string
+                email:
+                  description: email of user account
+                  type: string
+                password:
+                  description: password of user account
+                  type: string
+                  format: password
+                phone:
+                  description: telnumber of user account
+                  type: string
+              required:
+                - name
+                - email
+                - password
+                - phone
+      responses:
+        "200":
           description: account generated and verification email sent.
-        '403':
-          description: >-
-            Request denied because you are not authorized.<br>
-            Please send correct authorization header.
-        '409':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+        "403":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
           description: email client provided duplicated.
-        '412':
-          description: data client provided doesn't satisfy format.
-        '424':
-          description: >-
-            account generated but verification email wasn't sent.<br> please
-            resend verification email in application.
-        '500':
-          description: unknown server error occured (cause of network status)
+        "412":
+          $ref: "#/components/responses/FormatError"
+        "424":
+          $ref: "#/components/responses/EmailFailed"
+        "500":
+          $ref: "#/components/responses/ServerError"
+        default:
+          $ref: "#/components/responses/DefaultModel"
   /auth/active:
     get:
       tags:
@@ -91,34 +77,38 @@ paths:
       summary: User Activation
       description: api node for activating account
       operationId: activeUser
-      produces:
-        - application/json
-        - application/xml
       parameters:
         - name: email
           in: query
           description: The user email for activation
           required: true
-          type: string
+          schema:
+            type: string
         - name: token
           in: query
           description: The token for activation
           required: true
-          type: string
-          format: password
+          schema:
+            type: string
+            format: password
       responses:
-        default:
-            description: default reponse model
-            schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+        "200":
           description: account email activiation finished.
-        '409':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+        "409":
           description: account client provided not exist or already activated.
-        '412':
-          description: data client provided doesn't satisfy format.
-        '500':
-          description: unknown server error occured (cause of network status)
+        "412":
+          $ref: "#/components/responses/FormatError"
+        "500":
+          $ref: "#/components/responses/ServerError"
+        default:
+          $ref: "#/components/responses/DefaultModel"
   /auth/login:
     post:
       tags:
@@ -126,40 +116,37 @@ paths:
       summary: User Login
       description: api node for getting jwt token
       operationId: loginUser
-      produces:
-        - application/json
-        - application/xml
-      consumes:
-        - application/x-www-form-urlencoded
       security:
         - BasicAuth: []
-      parameters:
-        - name: email
-          in: formData
-          description: email of account
-          required: true
-          type: string
-        - name: password
-          in: formData
-          description: password of account
-          required: true
-          type: string
-          format: password
-      responses:
-        default:
-            description: default reponse model
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+              type: object
+              properties:
+                email:
+                  description: email of account
+                  type: string
+                password:
+                  description: password of account
+                  type: string
+                  format: password
+              required:
+                - email
+                - password
+      responses:
+        "200":
           description: user login succeed and json token published.
-        '409':
+        "409":
           description: no accounts were found that match the information client entered.
-        '412':
-          description: data client provided doesn't satisfy format.
-        '423':
-          description: user login denied because account closed.
-        '500':
-          description: unknown server error occured (cause of network status)
+        "412":
+          $ref: "#/components/responses/FormatError"
+        "423":
+          $ref: "#/components/responses/LoginDenied"
+        "500":
+          $ref: "#/components/responses/ServerError"
+        default:
+          $ref: "#/components/responses/DefaultModel"
   /auth/jwtdecode:
     get:
       tags:
@@ -167,39 +154,35 @@ paths:
       summary: JWT Token Decode
       description: api node for decoding jwt token
       operationId: jwtdecode
-      produces:
-        - application/json
-        - application/xml
-      consumes:
-        - application/x-www-form-urlencoded
       parameters:
         - name: token
           in: query
           description: The token for verification
           required: true
-          type: string
-          format: password
-      responses:
-        default:
-            description: default reponse model
-            schema:
-              $ref: "#/definitions/apiResult"
-        '200':
-          description: jwt token decoded.
           schema:
-            $ref: "#/definitions/UserInfo"
-        '500':
+            type: string
+            format: password
+      responses:
+        "200":
+          description: jwt token decoded.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/decodeTokenResult"
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/decodeTokenResult"
+        "500":
           description: jwt token decode failed.
-  /auth/pwdchange/{email}:
+        default:
+          $ref: "#/components/responses/DefaultModel"
+  "/auth/pwdchange/{email}":
     put:
       tags:
         - account
       summary: Non Social User password Change
       description: api node for change password
       operationId: pwdchange
-      produces:
-        - application/json
-        - application/xml
       security:
         - BasicAuth: []
       parameters:
@@ -207,52 +190,49 @@ paths:
           in: path
           description: user account email
           required: true
-          type: string
-        - name: curpassword
-          in: formData
-          description: user current password
-          required: true
-          type: string
-          format: password
-        - name: newpassword
-          in: formData
-          description: user new password
-          required: true
-          type: string
-          format: password
-      consumes:
-        - application/x-www-form-urlencoded
-      responses:
-        default:
-            description: default reponse model
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+              type: object
+              properties:
+                curpassword:
+                  description: user current password
+                  type: string
+                  format: password
+                newpassword:
+                  description: user new password
+                  type: string
+                  format: password
+              required:
+                - curpassword
+                - newpassword
+      responses:
+        "200":
           description: user password change task finished.
-        '403':
-          description: >-
-            Request denied because you are not authorized.<br>
-            Please send correct authorization header.
-        '409':
-          description: >-
+        "403":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
+          description: >
             no accounts were found that match the information you entered or
             social login account are denied to changed account password.
-        '423':
-          description: user login denied because account closed.
-        '424':
-          description: new password must be different from the old password. 
-        '500':
-          description: api server connection is unstable (cause of network status)
-  /auth/pwdreset/{email}:
+        "423":
+          $ref: "#/components/responses/LoginDenied"
+        "424":
+          description: new password must be different from the old password.
+        "500":
+          $ref: "#/components/responses/ServerError"
+        default:
+          $ref: "#/components/responses/DefaultModel"
+  "/auth/pwdreset/{email}":
     put:
       tags:
         - account
-      summary: Non Social User Password Reset Email Send 
+      summary: Non Social User Password Reset Email Send
       description: api node for reset password
       operationId: pwdreset-send
-      produces:
-        - application/json
-        - application/xml
       security:
         - BasicAuth: []
       parameters:
@@ -260,26 +240,23 @@ paths:
           in: path
           description: user account email
           required: true
-          type: string
+          schema:
+            type: string
       responses:
-        default:
-            description: default reponse model
-            schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+        "200":
           description: user password reset email sent.
-        '403':
-          description: >-
-            Request denied because you are not authorized.<br>
-            Please send correct authorization header.
-        '409':
-          description: user account email client provided is not valid.
-        '423':
-          description: user login denied because account closed.
-        '424':
+        "403":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
+          $ref: "#/components/responses/LoginDenied"
+        "423":
+          $ref: "#/components/responses/LoginDenied"
+        "424":
           description: password reset email sending failed.
-        '500':
-          description: api server connection is unstable (cause of network status)
+        "500":
+          $ref: "#/components/responses/ServerError"
+        default:
+          $ref: "#/components/responses/DefaultModel"
   /auth/pwdreset:
     post:
       tags:
@@ -287,46 +264,42 @@ paths:
       summary: Non Social User Password Reset
       description: api node for reset password
       operationId: pwdreset-callback
-      produces:
-        - application/json
-        - application/xml
-      consumes:
-        - application/x-www-form-urlencoded
-      parameters:
-        - name: token
-          in: formData
-          description: The token for password reset.
-          required: true
-          type: string
-          format: password
-        - name: email
-          in: formData
-          description: user account email
-          required: true
-          type: string
-        - name: password
-          in: formData
-          description: new account password
-          required: true
-          type: string
-          format: password
-      responses:
-        default:
-            description: default reponse model
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+              type: object
+              properties:
+                token:
+                  description: The token for password reset.
+                  type: string
+                  format: password
+                email:
+                  description: user account email
+                  type: string
+                password:
+                  description: new account password
+                  type: string
+                  format: password
+              required:
+                - token
+                - email
+                - password
+      responses:
+        "200":
           description: account password change finished.
-        '409':
-          description: >-
-            resetToken clien provided is not valid to change password or<br>
+        "409":
+          description: >
+            resetToken client provided is not valid to change password or
             account client provided is not acceptable to change password.
-        '412':
-          description: data client provided doesn't satisfy format.
-        '423':
-          description: user action denied because account closed.
-        '500':
-          description: api server connection is unstable (cause of network status) 
+        "412":
+          $ref: "#/components/responses/FormatError"
+        "423":
+          $ref: "#/components/responses/LoginDenied"
+        "500":
+          $ref: "#/components/responses/ServerError"
+        default:
+          $ref: "#/components/responses/DefaultModel"
   /auth/social-kakao:
     put:
       tags:
@@ -334,92 +307,142 @@ paths:
       summary: Social Account Access - Kakao
       description: api node for social access - kakao
       operationId: socialkakao
-      produces:
-        - application/json
-        - application/xml
-      consumes:
-        - application/x-www-form-urlencoded
       security:
         - BasicAuth: []
-      parameters:
-        - name: kakaotoken
-          in: formData
-          description: The Kakao token for process.
-          required: true
-          type: string
-          format: password
-      responses:
-        default:
-            description: default reponse model
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
             schema:
-              $ref: "#/definitions/apiResult"
-        '200':
+              type: object
+              properties:
+                kakaotoken:
+                  description: The Kakao token for process.
+                  type: string
+                  format: password
+              required:
+                - kakaotoken
+      responses:
+        "200":
           description: kakao user login succeed and json token published.
-        '403':
-          description: >-
-            Request denied because you are not authorized.<br><br>
-            Please send correct authorization header.
-        '409':
-          description: >-
-            user acounnt can not be logined through kakaoToken.<br>
-            please login through basic login -> "/auth/login"
-        '412':
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+        "403":
+          $ref: "#/components/responses/NotAuthorized"
+        "409":
+          description: >
+            user acounnt can not be logined through kakaoToken.
+            Please login through basic login -> "/auth/login"
+        "412":
           description: kakaoToken user provided is not acceptable.
-        '423':
-          description: user login denied because account closed.
-        '424':
-          description: >-
-            account generated but jwtToken generate failed.<br>
+        "423":
+          $ref: "#/components/responses/LoginDenied"
+        "424":
+          description: >
+            account generated but jwtToken generate failed.
             please request again to this node to get jwtToken.
-        '500':
-          description: api server connection is unstable (cause of network status) 
-definitions:
-  apiResult:
-    type: object
-    properties:
-      result: 
-        type: object
-        properties:
-          statusCode:
-            type: number
-          body:
-            type: object
-            properties:
-              msg:
-                type: string
-          output:
-            type: string
-          error:
-            type: string
-  UserInfo:
-    type: object
-    properties:
-      result: 
-        type: object
-        properties:
-          statusCode:
-            type: number
-          body:
-            type: object
-            properties:
-              msg:
-                type: string
-          output:
-            type: object
-            properties:
-              enable: 
-                type: string
-              email:
-                type: string
-              name:
-                type: string
-              phone:
-                type: string
-              lastlogin:
-                type: string
-              iat:
-                type: number
-              exp:
-                type: number
-          error:
-            type: string
+        "500":
+          $ref: '#/components/responses/ServerError'
+        default:
+          $ref: "#/components/responses/DefaultModel"
+servers:
+  - url: https://api.readlight.me/
+    description: Release Server
+  - url: http://localhost:3000/
+    description: Development Server
+components:
+  responses:
+    NotAuthorized:
+      description: >
+        Request denied because you are not authorized.
+        Please send correct authorization header.
+    LoginDenied:
+      description: user action denied because account closed.
+    FormatError:
+      description: data client provided doesn't satisfy format.
+    EmailFailed:
+      description: >
+        account generated but verification email wasn't sent.
+        Please resend verification email in application.
+    ServerError:
+      description: api server connection is unstable (cause of network status)
+    DefaultModel:
+      description: default response model
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/apiResult"
+        application/xml:
+          schema:
+            $ref: "#/components/schemas/apiResult"
+  securitySchemes:
+    JWTAuth:
+      type: apiKey
+      name: authorization
+      in: header
+    BasicAuth:
+      type: http
+      scheme: basic
+  schemas:
+    apiResult:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        bodymsg:
+          type: string
+        output:
+          nullable: true
+          type: object
+        error:
+          nullable: true
+          type: string
+    apiTokenResult:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        bodymsg:
+          type: string
+        output:
+          nullable: true
+          type: object
+          properties:
+            token:
+              type: string
+        error:
+          type: string
+    decodeTokenResult:
+      type: object
+      properties:
+        statusCode:
+          type: number
+        bodymsg:
+          type: string
+        output:
+          type: object
+          properties:
+            decode: 
+              type: object
+              properties:
+                enable:
+                  type: string
+                email:
+                  type: string
+                name:
+                  type: string
+                phone:
+                  type: string
+                lastlogin:
+                  type: string
+                iat:
+                  type: number
+                exp:
+                  type: number
+        error:
+          type: string
+          nullable: true
