@@ -48,7 +48,7 @@ router.post ("/", async (req,res) => {
     if (encryptPassword.toString("base64") !== _user.auth.password) return await SAVE_LOG(await responseFunction(res, 409, "ERR_USER_AUTH_FAILED"));
 
     //#UPDATE LAST_LOGIN FIELD
-    const _update = await User.updateOne({"account.email": email }, {"auth.history.lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")});
+    const _update = await User.updateOne({"account.email": email }, {"auth.denied":0, "auth.history.lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")});
     if (!_update) return await responseFunction(res, 500, "ERR_USER_LOGIN_UPDATE_FAILED", null, _update);
 
     //#GENERATE JWT TOKEN AND WRITE ON DOCUMENT
