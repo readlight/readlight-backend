@@ -102,6 +102,7 @@ router.post ("/", async (req,res) => {
                 subject: "[ReadLight] Account Verification Email", 
                 html: emailData
             };
+            createUser._id = undefined;
             createUser.auth = undefined;
             const { jwttoken, tokenerror } = await jwtSign(createUser);
             if (tokenerror !== null) return SAVE_LOG(await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", null, tokenerror));
