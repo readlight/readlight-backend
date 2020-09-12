@@ -2,7 +2,7 @@ import safe from "safe-regex";
 
 const loadRegex = async () => {
     const REGEX_EMAIL=/^[0-9a-zA-Z\_\-\.]+@[a-zA-Z\_\-\.]+?\.[a-zA-Z]{2,3}$/,
-    REGEX_PASSWD=/^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=]).*$/,
+    REGEX_PASSWD=/^.*(?=^.{8,15}$)(?=.*\d)(?=.*[a-zA-Z])(?=.*[!@#$%^&+=()*]).*$/,
     REGEX_PHONE=/^(?:(010-?\d{4})|(01[1|6|7|8|9]-?\d{3,4}))-?\d{4}$/,
     REGEX_NAME=/^[ㄱ-ㅎㅏ-ㅣ가-힣a-zA-Z0-1 ]{2,10}/;
 

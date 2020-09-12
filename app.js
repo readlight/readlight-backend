@@ -12,11 +12,7 @@ import router from "./routes/index";
 
 const app = express();
 var db_error;
-
 try {
-    /**
-     * check if ".env" file exist in config folder through checking if `app` object is not null" && open .env file
-     */
     fs.statSync(path.join(__dirname, "/config/.env"));
     config({ path: path.join(__dirname, "/config/.env") });
 
@@ -28,34 +24,32 @@ try {
     app.use("/", router);
     app.engine("html", express_ejs.renderFile);
 
-    /**
-    * DataBase Connect Using SSL Verification && Reconnect when DataBase had been disconnected.
-    */
-
+    //#DATABASE CONNECT WITH SSL ENCRYPTION FUNCTION
     const db_connect = () =>  {
         const mongouri = `mongodb://${process.env.DB_USER}:${qs.escape(process.env.DB_PASSWORD)}@${process.env.DB_HOST}/${process.env.DB_NAME}?authSource=${process.env.DB_AUTH_DB_NAME}`;
         connect(mongouri, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             tls: true,
-            tlsCertificateKeyFile: process.env.DB_SSL_KEY,
-            tlsCAFile: process.env.DB_SSL_CERT
+            tlsCAFile: process.env.DB_SSL_CERT,
+            tlsCertificateKeyFile: process.env.DB_SSL_KEY
         }, (err) => {
             db_error = err;
             if (err) throw err;
             console.log("[DB] Database connected via TCP/IP on port 27017 with TLS encryption");
         });
     };
-
     db_connect();
-    connection.on("disconnected",() => {
-        console.log("[DB] Database disconnect. Trying to reconnect...");
-        db_error = "disconnected";
-        db_connect();
-    });
 }
 catch (err) {
     if (err.code === "ENOENT") throw new Error ("missing \'.env\' file in \"config\" folder. please modify \'.env.sample\' file.");
+    throw(err);
 }
+
+connection.on("disconnected",() => {
+    console.log("[DB] Database disconnect. Trying to reconnect...");
+    db_error = "disconnected";
+    db_connect();
+});
 
 export {app , db_error};
