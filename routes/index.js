@@ -7,16 +7,18 @@ import { join as pathJoin } from "path";
 import { serve as swServe, setup as swSetup} from "swagger-ui-express";
 import list from "./list";
 import auth from "./auth";
+import jwtauth from "./jwtauth";
 
 const router = Router();
 
 router.use("/list",list);
 router.use("/auth",auth);
+router.use("/jwtauth",jwtauth);
 
 const swaggerDefinition = YAML.load(pathJoin(__dirname, "swagger.yaml"));
 const options = {
     swaggerDefinition,
-    apis: ["./auth/index.js", "./list/index.js", "./index.js"]
+    apis: ["./auth/index.js", "./list/index.js", "./jwtauth/index.js", "./index.js"]
 };
 
 moment.tz.setDefault("Asia/Seoul");

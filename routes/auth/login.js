@@ -2,7 +2,8 @@ import { Router } from "express";
 import { pbkdf2Sync } from "crypto";
 import { getClientIp } from "request-ip";
 import { db_error } from "../../app";
-import { jwtSign } from "../coms/jwtToken.js";
+import { getNewSignedJWTPair as jwtSign } from "../jwtauth/jwtSign";
+import jwtBlock from "../jwtauth/jwtBlock";
 import moment from "moment";
 import loadRegex from "../coms/loadRegex";
 import responseFunction from "../coms/apiResponse";
@@ -24,7 +25,7 @@ router.post ("/", async (req,res) => {
 
     //#GET USER OBJECT THROUGH EMAIL
     const _user = await User.findOne({"account.email" : email}, {"_id":0});
-    if (_user === null || _user === undefined) return await responseFunction(res, 409, "ERR_USER_NOT_FOUND");
+    if (_user === null || _user === undefined) return await responseFunction(res, 409, "ERR_USER_AUTH_FAILED");
     else if (_user.account.status === "rejected") return await responseFunction(res, 423, "ERR_USER_ACCESS_DENIED");
     
     //#SAVE ACCESS LOG ON DATABASE
@@ -43,7 +44,7 @@ router.post ("/", async (req,res) => {
     };
 
     //COMPARE DB_PASSWORD WITH PROVIDED PASSWORD
-    const encryptPassword = await pbkdf2Sync(password, _user.auth.salt, 100000, 64, "SHA512");
+    const encryptPassword = pbkdf2Sync(password, _user.auth.salt, 100000, 64, "SHA512");
     req.body.password = encryptPassword.toString("base64"); //HIDE INPUT_PW ON DATABASE
     if (encryptPassword.toString("base64") !== _user.auth.password) return await SAVE_LOG(await responseFunction(res, 409, "ERR_USER_AUTH_FAILED"));
 
@@ -53,8 +54,14 @@ router.post ("/", async (req,res) => {
 
     //#GENERATE JWT TOKEN AND WRITE ON DOCUMENT
     _user.auth = undefined;
-    const { jwttoken, tokenerror } = await jwtSign(_user);
-    if (tokenerror !== null) return await SAVE_LOG(await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", null, tokenerror));
+    const { jwttoken, signerror } = await jwtSign(_user.toJSON(), "5d");
+    if (signerror !== null) return await SAVE_LOG(await responseFunction(res, 500, "ERR_JWT_TOKEN_GENERATE_FAILED", null, signerror));
+
+    //#IF USER SENDED OLD-REFRESH-TOKEN, BLOCK TOKEN AND WRITE NEW TOKEN
+    if (req.body.refreshToken) {
+        const { blockerror } = await jwtBlock(req.body.refreshToken);
+        if (blockerror !== null) return await SAVE_LOG(await responseFunction(res, 500, "ERR_REFRESH_TOKEN_BLOCK_FAILED", null, blockerror));
+    }
     return await SAVE_LOG(await responseFunction(res, 200, "SUCCEED_USER_LOGIN", {"token":jwttoken}));
 });
 
