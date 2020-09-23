@@ -5,7 +5,8 @@ import { randomBytes, createCipheriv} from "crypto";
 import responseFunction from "../coms/apiResponse";
 import moment from "moment";
 import request from "request";
-import { jwtSign } from "../coms/jwtToken";
+import { getNewSignedJWTPair as jwtSign } from "../jwtauth/jwtSign";
+import jwtBlock from "../jwtauth/jwtBlock";
 import authLog from "../../models/authlog";
 import User from "../../models/user";
 
@@ -70,14 +71,20 @@ router.put ("/", async (req,res) => {
         if (!(_user.accoutn.status === "kakao" && userObject.password === _user.auth.password))
             return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 409,"ERR_KAKAO_USER_MISMACH"));
 
+        //#GENERATE JWT TOKEN
+        _user.auth = undefined;
+        const { jwttoken, signerror } = await jwtSign(_user.toJSON(), "5d");
+        if (signerror !== null) return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", jwttoken, signerror));
+        
         //#UPDATE LAST_LOGIN FIELD
         const _update = await User.updateOne({"email": userObject.email }, {"lastlogin" : moment().format("YYYY-MM-DD HH:mm:ss")});
         if (!_update) return await responseFunction(res, 500, "ERR_USER_LOGIN_UPDATE_FAILED", null, _update);
 
-        //#GENERATE JWT TOKEN AND DEPLOY TO CLIENT
-        _user.auth = undefined;
-        const { jwttoken, tokenerror } = await jwtSign(_user);
-        if (tokenerror !== null) return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", jwttoken, tokenerror));
+        //#IF USER SENDED OLD-REFRESH-TOKEN, BLOCK TOKEN AND WRITE NEW TOKEN
+        if (req.body.refreshToken) {
+            const { blockerror } = await jwtBlock(req.body.refreshToken);
+            if (blockerror !== null) return await SAVE_LOG(await responseFunction(res, 500, "ERR_REFRESH_TOKEN_BLOCK_FAILED", null, blockerror));
+        }
         return await SAVE_LOG("KAKAO_LOGIN", await responseFunction(res, 200, "SUCCEED_KAKAO_USER_LOGIN", {"token":jwttoken}));
     }
      
@@ -104,15 +111,17 @@ router.put ("/", async (req,res) => {
         }
     });
 
+    //#SIGN NEW USER JWTTOKEN BEFORE SAVE
+    const userJWTObject = {
+        account: createUser.account,
+        profile: createUser.profile
+    }, { jwttoken, signerror } = await jwtSign(userJWTObject, "5d");
+    if (signerror !== null) return SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 500, "ERR_JWT_TOKEN_GENERATE_FAILED", null, signerror));
+
+    //#SAVE USER ACCOUNT TO DATABASE
     await createUser.save(async (save_error) => {
         //#HANDLE WHEN SAVE TASK FAILED
         if (save_error) return await responseFunction(res, 500, "ERR_USER_SAVE_FAILED", null, save_error);
-
-        //#GENERATE JWT TOKEN AND DEPLOY TO CLIENT
-        createUser._id = undefined;
-        createUser.auth = undefined;
-        const { jwttoken, tokenerror } = await jwtSign(createUser);
-        if (tokenerror !== null) return await SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 500, "ERR_JWT_GENERATE_FAILED", null, tokenerror));
         return await SAVE_LOG("KAKAO_SIGNUP", await responseFunction(res, 200, "SUCCEED_USER_CREATED", {"token":jwttoken}));
     });   
 });

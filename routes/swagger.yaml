@@ -13,7 +13,9 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 tags:
   - name: account
-    description: User Authentification API
+    description: User Account Management API
+  - name: jwtauth
+    description: JwtToken Authentication API
 paths:
   /auth/signup:
     post:
@@ -130,13 +132,23 @@ paths:
                 password:
                   description: password of account
                   type: string
-                  format: password
+                  format: password 
+                refreshToken:
+                  description: refreshToken to block
+                  type: string
               required:
                 - email
                 - password
       responses:
         "200":
           description: user login succeed and json token published.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/apiTokenResult"
         "409":
           description: no accounts were found that match the information client entered.
         "412":
@@ -147,36 +159,8 @@ paths:
           $ref: "#/components/responses/ServerError"
         default:
           $ref: "#/components/responses/DefaultModel"
-  /auth/jwtdecode:
-    get:
-      tags:
-        - account
-      summary: JWT Token Decode
-      description: api node for decoding jwt token
-      operationId: jwtdecode
-      parameters:
-        - name: token
-          in: query
-          description: The token for verification
-          required: true
-          schema:
-            type: string
-            format: password
-      responses:
-        "200":
-          description: jwt token decoded.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/decodeTokenResult"
-            application/xml:
-              schema:
-                $ref: "#/components/schemas/decodeTokenResult"
-        "500":
-          description: jwt token decode failed.
-        default:
-          $ref: "#/components/responses/DefaultModel"
-  "/auth/pwdchange/{email}":
+  
+  /auth/pwdchange/{email}:
     put:
       tags:
         - account
@@ -226,7 +210,7 @@ paths:
           $ref: "#/components/responses/ServerError"
         default:
           $ref: "#/components/responses/DefaultModel"
-  "/auth/pwdreset/{email}":
+  /auth/pwdreset/{email}:
     put:
       tags:
         - account
@@ -319,6 +303,9 @@ paths:
                   description: The Kakao token for process.
                   type: string
                   format: password
+                refreshToken:
+                  description: refreshToken to block
+                  type: string
               required:
                 - kakaotoken
       responses:
@@ -349,10 +336,38 @@ paths:
           $ref: '#/components/responses/ServerError'
         default:
           $ref: "#/components/responses/DefaultModel"
+  /jwtauth/decode/{accessToken}:
+    get:
+      tags:
+        - jwtauth
+      summary: JWT AccessToken Decode
+      description: api node for decoding JWT Access-Token
+      operationId: jwtAccessTokenDecode
+      parameters:
+        - name: accessToken
+          in: path
+          description: accessToken to decode token
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: JWT accessToken decoded successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/decodeTokenResult"
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/decodeTokenResult"
+        "500":
+          description: JWT accessToken decode failed.
+        default:
+          $ref: "#/components/responses/DefaultModel"
 servers:
   - url: https://api.readlight.me/
     description: Release Server
-  - url: http://localhost:3000/
+  - url: https://api-v2.readlight.me/
     description: Development Server
 components:
   responses:
@@ -413,7 +428,12 @@ components:
           type: object
           properties:
             token:
-              type: string
+              type: object
+              properties:
+                access: 
+                  type: string
+                refresh:
+                  type: string
         error:
           type: string
     decodeTokenResult:
